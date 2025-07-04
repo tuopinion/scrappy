@@ -1,7 +1,7 @@
 {
   "name": "puppeteer-proxy",
   "version": "1.0.0",
-  "description": "Proxy con Puppeteer para evitar bloqueos en scraping",
+  "description": "Servidor proxy usando Puppeteer",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
