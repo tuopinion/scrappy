@@ -1,31 +1,35 @@
 const express = require("express");
-const chromium = require("chrome-aws-lambda");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer");
 
 const app = express();
 
 app.get("/", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Falta el parámetro ?url=");
+  if (!url) {
+    console.error("Falta el parámetro ?url=");
+    return res.status(400).send("Falta el parámetro ?url=");
+  }
 
-  let browser = null;
+  console.log(`Cargando: ${url}`);
+  let browser;
 
   try {
     browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+
     const html = await page.content();
     await browser.close();
+
+    console.log(`✅ Renderizado OK para ${url}`);
     res.set("Content-Type", "text/html");
     res.send(html);
   } catch (error) {
-    console.error(error);
+    console.error(`❌ Error al renderizar ${url}:`, error.message);
     if (browser) await browser.close();
     res.status(500).send("Error al renderizar la página");
   }
