@@ -1,24 +1,25 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
 const chromium = require("chrome-aws-lambda");
+const puppeteer = require("puppeteer-core");
 
 const app = express();
 
 app.get("/", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Falta el parámetro ?url=");
+  if (!url) {
+    console.error("Falta el parámetro ?url=");
+    return res.status(400).send("Falta el parámetro ?url=");
+  }
 
-  let browser = null;
+  console.log(`Cargando: ${url}`);
+  let browser;
 
   try {
-    const executablePath = await chromium.executablePath;
-    if (!executablePath) throw new Error("No se encontró ejecutable de Chromium.");
-
     browser = await puppeteer.launch({
       args: chromium.args,
-      executablePath,
-      headless: chromium.headless,
       defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
@@ -27,16 +28,17 @@ app.get("/", async (req, res) => {
     const html = await page.content();
     await browser.close();
 
+    console.log(`✅ Renderizado OK para ${url}`);
     res.set("Content-Type", "text/html");
     res.send(html);
-  } catch (err) {
-    console.error("❌ Error al renderizar:", err.message);
+  } catch (error) {
+    console.error(`❌ Error al renderizar ${url}:`, error.message);
     if (browser) await browser.close();
     res.status(500).send("Error al renderizar la página");
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("🚀 Servidor corriendo en puerto " + PORT);
+  console.log("Servidor corriendo en puerto " + PORT);
 });
